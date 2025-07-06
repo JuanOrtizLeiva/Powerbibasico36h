@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Visualizaciones - Power BI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .controls-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .controls-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .data-input {
+            margin-top: 10px;
+        }
+        
+        .data-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .preview-header h3 {
+            color: #333;
+            font-size: 1.8em;
+        }
+        
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 400px;
+        }
+        
+        .recommendations {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .recommendations h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .recommendation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .rec-card {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .rec-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .rec-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .tips-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .tips-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .tip {
+            background: #f7f9fc;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        
+        .tip strong {
+            color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.selected {
+            border-color: #333;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-panel {
+                position: static;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Simulador de Visualizaciones Power BI</h1>
+            <p>Experimenta con diferentes tipos de gráficos antes de crearlos en Power BI</p>
+        </div>
+        
+        <div class="recommendations">
+            <h3>💡 ¿Qué visualización debo usar?</h3>
+            <div class="recommendation-cards">
+                <div class="rec-card">
+                    <h4>📊 Comparar Categorías</h4>
+                    <p>Usa gráficos de barras o columnas cuando necesites comparar valores entre diferentes grupos.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>📈 Mostrar Tendencias</h4>
+                    <p>Los gráficos de líneas son perfectos para visualizar cambios a lo largo del tiempo.</p>
+                </div>
+                <div class="rec-card">
+                    <h4>🥧 Partes de un Todo</h4>
+                    <p>Gráficos circulares o de dona para mostrar proporciones (máximo 5 categorías).</p>
+                </div>
+                <div class="rec-card">
+                    <h4>🎯 KPIs Importantes</h4>
+                    <p>Usa tarjetas para destacar métricas únicas como totales o promedios clave.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="controls-panel">
+                <h2>⚙️ Configuración</h2>
+                
+                <div class="control-group">
+                    <label for="chartType">Tipo de Visualización:</label>
+                    <select id="chartType" onchange="updateChart()">
+                        <option value="bar">Gráfico de Barras</option>
+                        <option value="line">Gráfico de Líneas</option>
+                        <option value="pie">Gráfico Circular</option>
+                        <option value="doughnut">Gráfico de Dona</option>
+                        <option value="horizontalBar">Barras Horizontales</option>
+                        <option value="area">Gráfico de Área</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="dataPoints">Número de Datos:</label>
+                    <input type="number" id="dataPoints" min="2" max="10" value="5" onchange="updateDataInputs()">
+                </div>
+                
+                <div class="control-group">
+                    <label>Datos:</label>
+                    <div id="dataInputs" class="data-input">
+                        <!-- Inputs dinámicos -->
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Esquema de Colores:</label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background: linear-gradient(135deg, #667eea, #764ba2)" onclick="changeColorScheme('purple')"></div>
+                        <div class="color-option" style="background: linear-gradient(135deg, #f093fb, #f5576c)" onclick="changeColorScheme('pink')"></div>
+                        <div class="color-option" style="background: linear-gradient(135deg, #4facfe, #00f2fe)" onclick="changeColorScheme('blue')"></div>
+                        <div class="color-option" style="background: linear-gradient(135deg, #43e97b, #38f9d7)" onclick="changeColorScheme('green')"></div>
+                        <div class="color-option" style="background: linear-gradient(135deg, #fa709a, #fee140)" onclick="changeColorScheme('sunset')"></div>
+                    </div>
+                </div>
+                
+                <button onclick="generateRandomData()">🎲 Generar Datos Aleatorios</button>
+                <button onclick="exportConfig()">💾 Exportar Configuración</button>
+            </div>
+            
+            <div class="preview-area">
+                <div class="preview-header">
+                    <h3>Vista Previa</h3>
+                    <span id="chartTypeLabel" style="color: #667eea; font-weight: bold;">Gráfico de Barras</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tips-section">
+            <h3>🎯 Tips para esta Visualización</h3>
+            <div id="tipsContainer">
+                <!-- Tips dinámicos -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let myChart = null;
+        let currentColorScheme = 'purple';
+        
+        const colorSchemes = {
+            purple: ['#667eea', '#764ba2', '#8b5cf6', '#a78bfa', '#c4b5fd'],
+            pink: ['#f093fb', '#f5576c', '#ff6b9d', '#ff8787', '#ffc0cb'],
+            blue: ['#4facfe', '#00f2fe', '#0099ff', '#0066cc', '#003d7a'],
+            green: ['#43e97b', '#38f9d7', '#00d2ff', '#0099cc', '#006699'],
+            sunset: ['#fa709a', '#fee140', '#ff6b6b', '#ff8e53', '#ffb74d']
+        };
+        
+        const chartTips = {
+            bar: [
+                { title: "Orden importa", text: "Ordena las barras de mayor a menor para facilitar la comparación" },
+                { title: "Límite de categorías", text: "No uses más de 10-15 barras para mantener la claridad" },
+                { title: "Etiquetas", text: "Asegúrate de que las etiquetas sean legibles y no se superpongan" }
+            ],
+            line: [
+                { title: "Continuidad temporal", text: "Usa gráficos de líneas solo para datos continuos en el tiempo" },
+                { title: "Múltiples líneas", text: "Limita a 3-4 líneas para evitar confusión visual" },
+                { title: "Marcadores", text: "Considera agregar puntos en datos importantes" }
+            ],
+            pie: [
+                { title: "Máximo 5 categorías", text: "Los gráficos circulares funcionan mejor con 2-5 segmentos" },
+                { title: "Orden clockwise", text: "Ordena los segmentos de mayor a menor empezando desde las 12" },
+                { title: "Alternativa", text: "Considera usar barras si las proporciones son similares" }
+            ],
+            doughnut: [
+                { title: "Centro informativo", text: "Usa el centro para mostrar el total o una métrica clave" },
+                { title: "Comparación difícil", text: "Evita si necesitas comparación precisa entre segmentos" },
+                { title: "Estética moderna", text: "Los gráficos de dona dan un look más moderno que los circulares" }
+            ],
+            horizontalBar: [
+                { title: "Nombres largos", text: "Perfectos cuando las etiquetas de categorías son largas" },
+                { title: "Rankings", text: "Ideales para mostrar rankings o clasificaciones" },
+                { title: "Lectura natural", text: "Se leen de arriba hacia abajo, como texto" }
+            ],
+            area: [
+                { title: "Volumen acumulado", text: "Excelentes para mostrar totales acumulados en el tiempo" },
+                { title: "Áreas apiladas", text: "Úsalas para mostrar cómo las partes contribuyen al todo" },
+                { title: "Tendencia general", text: "Enfatizan la magnitud del cambio más que los valores exactos" }
+            ]
+        };
+        
+        function initializeChart() {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const data = getDefaultData();
+            
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: {
+                                size: 16
+                            },
+                            bodyFont: {
+                                size: 14
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            updateDataInputs();
+            updateTips('bar');
+        }
+        
+        function getDefaultData() {
+            return {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                datasets: [{
+                    label: 'Ventas',
+                    data: [12, 19, 3, 5, 2],
+                    backgroundColor: colorSchemes[currentColorScheme],
+                    borderColor: colorSchemes[currentColorScheme][0],
+                    borderWidth: 2
+                }]
+            };
+        }
+        
+        function updateChart() {
+            const chartType = document.getElementById('chartType').value;
+            const labels = [];
+            const data = [];
+            
+            const inputs = document.querySelectorAll('.data-row');
+            inputs.forEach(row => {
+                const label = row.querySelector('input[type="text"]').value;
+                const value = parseFloat(row.querySelector('input[type="number"]').value);
+                if (label && !isNaN(value)) {
+                    labels.push(label);
+                    data.push(value);
+                }
+            });
+            
+            myChart.destroy();
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            const chartConfig = {
+                type: chartType === 'horizontalBar' ? 'bar' : chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Datos',
+                        data: data,
+                        backgroundColor: colorSchemes[currentColorScheme],
+                        borderColor: colorSchemes[currentColorScheme][0],
+                        borderWidth: 2,
+                        fill: chartType === 'area'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            };
+            
+            if (chartType === 'line' || chartType === 'area') {
+                chartConfig.options.scales = {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                };
+            }
+            
+            myChart = new Chart(ctx, chartConfig);
+            
+            // Actualizar label
+            const typeLabels = {
+                'bar': 'Gráfico de Barras',
+                'line': 'Gráfico de Líneas',
+                'pie': 'Gráfico Circular',
+                'doughnut': 'Gráfico de Dona',
+                'horizontalBar': 'Barras Horizontales',
+                'area': 'Gráfico de Área'
+            };
+            document.getElementById('chartTypeLabel').textContent = typeLabels[chartType];
+            
+            updateTips(chartType);
+        }
+        
+        function updateDataInputs() {
+            const count = parseInt(document.getElementById('dataPoints').value);
+            const container = document.getElementById('dataInputs');
+            container.innerHTML = '';
+            
+            const defaultLabels = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre'];
+            const defaultValues = [12, 19, 3, 5, 2, 3, 8, 12, 15, 10];
+            
+            for (let i = 0; i < count; i++) {
+                const row = document.createElement('div');
+                row.className = 'data-row';
+                row.innerHTML = `
+                    <input type="text" placeholder="Etiqueta" value="${defaultLabels[i] || 'Dato ' + (i + 1)}" onchange="updateChart()">
+                    <input type="number" placeholder="Valor" value="${defaultValues[i] || Math.floor(Math.random() * 20) + 1}" onchange="updateChart()">
+                `;
+                container.appendChild(row);
+            }
+            
+            updateChart();
+        }
+        
+        function changeColorScheme(scheme) {
+            currentColorScheme = scheme;
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            updateChart();
+        }
+        
+        function generateRandomData() {
+            const inputs = document.querySelectorAll('.data-row input[type="number"]');
+            inputs.forEach(input => {
+                input.value = Math.floor(Math.random() * 50) + 10;
+            });
+            updateChart();
+        }
+        
+        function updateTips(chartType) {
+            const container = document.getElementById('tipsContainer');
+            container.innerHTML = '';
+            
+            const tips = chartTips[chartType] || chartTips['bar'];
+            tips.forEach(tip => {
+                const tipElement = document.createElement('div');
+                tipElement.className = 'tip';
+                tipElement.innerHTML = `<strong>${tip.title}:</strong> ${tip.text}`;
+                container.appendChild(tipElement);
+            });
+        }
+        
+        function exportConfig() {
+            const config = {
+                chartType: document.getElementById('chartType').value,
+                colorScheme: currentColorScheme,
+                data: []
+            };
+            
+            document.querySelectorAll('.data-row').forEach(row => {
+                const label = row.querySelector('input[type="text"]').value;
+                const value = row.querySelector('input[type="number"]').value;
+                config.data.push({ label, value });
+            });
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'powerbi-config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Inicializar al cargar la página
+        window.onload = initializeChart;
+    </script>
+</body>
+</html>
