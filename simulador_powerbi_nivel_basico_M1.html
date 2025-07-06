@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Visualizaciones - Power BI</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -149,7 +150,7 @@
         
         .recommendation-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -176,6 +177,7 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
         
         .tips-section h3 {
@@ -260,6 +262,24 @@
             <p>Experimenta con diferentes tipos de gráficos antes de crearlos en Power BI</p>
         </div>
         
+        <div id="treemapSection" style="display: none;">
+            <div class="tips-section">
+                <h3>🌳 Acerca del Mapa de Árbol (Treemap)</h3>
+                <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 20px; border-radius: 10px; margin-top: 15px;">
+                    <p style="margin: 0 0 10px 0; color: #2e7d32;">
+                        <strong>¿Qué es un Treemap?</strong><br>
+                        Es una visualización que muestra datos jerárquicos como rectángulos anidados. El tamaño de cada rectángulo es proporcional al valor que representa.
+                    </p>
+                    <p style="margin: 0; color: #2e7d32;">
+                        <strong>Cuándo usarlo en Power BI:</strong><br>
+                        • Para mostrar la composición de un total en muchas categorías<br>
+                        • Cuando el espacio es limitado pero tienes muchas categorías<br>
+                        • Para identificar patrones en grandes conjuntos de datos categóricos
+                    </p>
+                </div>
+            </div>
+        </div>
+        
         <div class="recommendations">
             <h3>💡 ¿Qué visualización debo usar?</h3>
             <div class="recommendation-cards">
@@ -279,6 +299,10 @@
                     <h4>🎯 KPIs Importantes</h4>
                     <p>Usa tarjetas para destacar métricas únicas como totales o promedios clave.</p>
                 </div>
+                <div class="rec-card">
+                    <h4>🌳 Jerarquías y Proporciones</h4>
+                    <p>Los mapas de árbol (treemap) muestran datos jerárquicos y proporciones en el espacio disponible.</p>
+                </div>
             </div>
         </div>
         
@@ -295,6 +319,7 @@
                         <option value="doughnut">Gráfico de Dona</option>
                         <option value="horizontalBar">Barras Horizontales</option>
                         <option value="area">Gráfico de Área</option>
+                        <option value="treemap">Mapa de Árbol (Treemap)</option>
                     </select>
                 </div>
                 
@@ -322,7 +347,6 @@
                 </div>
                 
                 <button onclick="generateRandomData()">🎲 Generar Datos Aleatorios</button>
-                <button onclick="exportConfig()">💾 Exportar Configuración</button>
                 <button onclick="resetSimulator()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);">🔄 Reiniciar Simulador</button>
             </div>
             
@@ -387,6 +411,12 @@
                 { title: "Volumen acumulado", text: "Excelentes para mostrar totales acumulados en el tiempo" },
                 { title: "Áreas apiladas", text: "Úsalas para mostrar cómo las partes contribuyen al todo" },
                 { title: "Tendencia general", text: "Enfatizan la magnitud del cambio más que los valores exactos" }
+            ],
+            treemap: [
+                { title: "Jerarquías y proporciones", text: "Ideal para mostrar datos jerárquicos y proporciones relativas en un espacio compacto" },
+                { title: "Uso del espacio", text: "Aprovecha al máximo el espacio disponible para visualizar muchas categorías simultáneamente" },
+                { title: "Colores significativos", text: "Usa colores para añadir una dimensión adicional de información (por ejemplo, rendimiento o categoría)" },
+                { title: "Limitaciones", text: "No es ideal para comparaciones precisas entre valores similares, mejor para proporciones generales" }
             ]
         };
         
@@ -471,60 +501,162 @@
             // Manejar el gráfico de área como un tipo line con fill
             const actualChartType = chartType === 'area' ? 'line' : (chartType === 'horizontalBar' ? 'bar' : chartType);
             
-            const chartConfig = {
-                type: actualChartType,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Datos',
-                        data: data,
-                        backgroundColor: chartType === 'area' ? colorSchemes[currentColorScheme][0] + '40' : colorSchemes[currentColorScheme],
-                        borderColor: colorSchemes[currentColorScheme][0],
-                        borderWidth: 2,
-                        fill: chartType === 'area' ? true : false,
-                        tension: chartType === 'area' ? 0.4 : 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
-                    plugins: {
-                        legend: {
-                            display: false
+            // Configuración especial para treemap
+            if (chartType === 'treemap') {
+                try {
+                    const treeData = labels.map((label, index) => ({
+                        label: label,
+                        value: data[index],
+                        color: colorSchemes[currentColorScheme][index % colorSchemes[currentColorScheme].length]
+                    }));
+                    
+                    const chartConfig = {
+                        type: 'treemap',
+                        data: {
+                            datasets: [{
+                                label: 'Treemap',
+                                tree: treeData,
+                                key: 'value',
+                                groups: ['label'],
+                                backgroundColor: function(ctx) {
+                                    if (ctx.type !== 'data') return 'transparent';
+                                    return colorSchemes[currentColorScheme][ctx.dataIndex % colorSchemes[currentColorScheme].length];
+                                },
+                                borderColor: 'white',
+                                borderWidth: 1,
+                                spacing: 0.5,
+                                labels: {
+                                    display: true,
+                                    formatter(ctx) {
+                                        if (ctx.type !== 'data') { return ''; }
+                                        return ctx.raw.label;
+                                    },
+                                    color: 'white',
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }]
                         },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            cornerRadius: 8,
-                            titleFont: {
-                                size: 16
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    displayColors: false,
+                                    callbacks: {
+                                        title: function(tooltipItems) {
+                                            return tooltipItems[0].raw._data ? tooltipItems[0].raw._data.label : '';
+                                        },
+                                        label: function(tooltipItem) {
+                                            return 'Valor: ' + (tooltipItem.raw.v || tooltipItem.raw.value || 0);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    
+                    myChart = new Chart(ctx, chartConfig);
+                } catch (error) {
+                    console.error('Error al crear treemap:', error);
+                    // Si falla el treemap, usar gráfico de barras como fallback
+                    const fallbackConfig = {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Datos',
+                                data: data,
+                                backgroundColor: colorSchemes[currentColorScheme],
+                                borderColor: colorSchemes[currentColorScheme][0],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: '⚠️ El Mapa de Árbol requiere configuración adicional - Mostrando como barras',
+                                    color: '#ff6b6b',
+                                    padding: 20,
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    myChart = new Chart(ctx, fallbackConfig);
+                }
+            } else {
+                // Configuración para otros tipos de gráficos
+                const chartConfig = {
+                    type: actualChartType,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Datos',
+                            data: data,
+                            backgroundColor: chartType === 'area' ? colorSchemes[currentColorScheme][0] + '40' : colorSchemes[currentColorScheme],
+                            borderColor: colorSchemes[currentColorScheme][0],
+                            borderWidth: 2,
+                            fill: chartType === 'area' ? true : false,
+                            tension: chartType === 'area' ? 0.4 : 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
+                        plugins: {
+                            legend: {
+                                display: false
                             },
-                            bodyFont: {
-                                size: 14
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                cornerRadius: 8,
+                                titleFont: {
+                                    size: 16
+                                },
+                                bodyFont: {
+                                    size: 14
+                                }
                             }
                         }
                     }
-                }
-            };
-            
-            if (chartType === 'line' || chartType === 'area') {
-                chartConfig.options.scales = {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
                 };
+                
+                if (chartType === 'line' || chartType === 'area') {
+                    chartConfig.options.scales = {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    };
+                }
+                
+                myChart = new Chart(ctx, chartConfig);
             }
-            
-            myChart = new Chart(ctx, chartConfig);
             
             // Actualizar label
             const typeLabels = {
@@ -533,7 +665,8 @@
                 'pie': 'Gráfico Circular',
                 'doughnut': 'Gráfico de Dona',
                 'horizontalBar': 'Barras Horizontales',
-                'area': 'Gráfico de Área'
+                'area': 'Gráfico de Área',
+                'treemap': 'Mapa de Árbol (Treemap)'
             };
             document.getElementById('chartTypeLabel').textContent = typeLabels[chartType];
             
@@ -571,6 +704,17 @@
             }
             
             updateChart();
+            
+            // Mostrar sugerencia visual si hay muchos datos
+            if (count >= 8) {
+                const currentType = document.getElementById('chartType').value;
+                if (currentType === 'bar' || currentType === 'pie') {
+                    const suggestion = document.createElement('div');
+                    suggestion.style.cssText = 'background-color: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 13px;';
+                    suggestion.innerHTML = '💡 <strong>Tip:</strong> Con ' + count + ' categorías, considera usar un <strong>Mapa de Árbol</strong> para mejor visualización.';
+                    container.appendChild(suggestion);
+                }
+            }
         }
         
         function changeColorScheme(scheme) {
@@ -601,30 +745,14 @@
                 tipElement.innerHTML = `<strong>${tip.title}:</strong> ${tip.text}`;
                 container.appendChild(tipElement);
             });
-        }
-        
-        function exportConfig() {
-            const config = {
-                chartType: document.getElementById('chartType').value,
-                colorScheme: currentColorScheme,
-                data: []
-            };
             
-            document.querySelectorAll('.data-row').forEach(row => {
-                const label = row.querySelector('input[type="text"]').value;
-                const value = row.querySelector('input[type="number"]').value;
-                config.data.push({ label, value });
-            });
-            
-            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'powerbi-config.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Mostrar/ocultar sección del treemap
+            const treemapSection = document.getElementById('treemapSection');
+            if (chartType === 'treemap') {
+                treemapSection.style.display = 'block';
+            } else {
+                treemapSection.style.display = 'none';
+            }
         }
         
         function resetSimulator() {
